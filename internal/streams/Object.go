@@ -1,7 +1,7 @@
 package streams
 
 type ObjectAS2 struct {
-	Context      PropertyAS2            `json:"@context"`
+	LDContext    PropertyAS2            `json:"@context"`
 	Id           PropertyAS2            `json:"id"`
 	Type         PropertyAS2            `json:"type"`
 	Name         PropertyAS2            `json:"name"`
@@ -29,5 +29,6 @@ type ObjectAS2 struct {
 	StartTime    PropertyAS2            `json:"startTime"`
 	EndTime      PropertyAS2            `json:"endTime"`
 	Duration     PropertyAS2            `json:"duration"`
+	Context      PropertyAS2            `json:"context"`
 	Map_         map[string]PropertyAS2 `json:"-"`
 }
