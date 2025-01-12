@@ -5,11 +5,14 @@ type ObjectAS2 struct {
 	Id           PropertyAS2            `json:"id"`
 	Type         PropertyAS2            `json:"type"`
 	Name         PropertyAS2            `json:"name"`
+	NameMap      PropertyAS2            `json:"nameMap"`
 	Summary      PropertyAS2            `json:"summary"`
+	SummaryMap   PropertyAS2            `json:"summaryMap"`
 	Icon         PropertyAS2            `json:"icon"`
 	Image        PropertyAS2            `json:"image"`
 	Tag          PropertyAS2            `json:"tag"`
 	Content      PropertyAS2            `json:"content"`
+	ContentMap   PropertyAS2            `json:"contentMap"`
 	Published    PropertyAS2            `json:"published"`
 	Updated      PropertyAS2            `json:"updated"`
 	Url          PropertyAS2            `json:"url"`
