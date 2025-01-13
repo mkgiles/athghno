@@ -1,5 +1,5 @@
 package streams
 
-type Flag struct {
+type FlagAS2 struct {
 	ActivityAS2
 }

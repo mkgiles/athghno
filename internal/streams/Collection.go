@@ -20,7 +20,7 @@ type CollectionPageAS2 struct {
 	Previous PropertyAS2 `json:"previous"`
 }
 
-type OrderedCollectionPage struct {
+type OrderedCollectionPageAS2 struct {
 	CollectionPageAS2
 	StartIndex PropertyAS2 `json:"startIndex"`
 }

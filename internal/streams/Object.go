@@ -1,6 +1,7 @@
 package streams
 
 type ObjectAS2 struct {
+	Registrable                         // Makes all objects that embed ObjectAS2 registrable in the TypeRegistry
 	LDContext    PropertyAS2            `json:"@context"`
 	Id           PropertyAS2            `json:"id"`
 	Type         PropertyAS2            `json:"type"`
@@ -33,5 +34,8 @@ type ObjectAS2 struct {
 	EndTime      PropertyAS2            `json:"endTime"`
 	Duration     PropertyAS2            `json:"duration"`
 	Context      PropertyAS2            `json:"context"`
-	Map_         map[string]PropertyAS2 `json:"-"`
+	Source       PropertyAS2            `json:"source"` // ActivityPub Extension of ActivityStreams Property
+	Likes        PropertyAS2            `json:"likes"`  // ditto
+	Shares       PropertyAS2            `json:"shares"` // ^^
+	Map_         map[string]PropertyAS2 `json:"-"`      // Contains all properties that are not in spec
 }
