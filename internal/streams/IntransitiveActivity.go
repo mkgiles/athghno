@@ -2,9 +2,9 @@ package streams
 
 type IntransitiveActivityAS2 struct {
 	ObjectAS2
-	Actor      PropertyAS2 `json:"actor"`
-	Target     PropertyAS2 `json:"target"`
-	Result     PropertyAS2 `json:"result"`
-	Origin     PropertyAS2 `json:"origin"`
-	Instrument PropertyAS2 `json:"instrument"`
+	Actor      *PropertyAS2 `json:"actor,omitempty"`
+	Target     *PropertyAS2 `json:"target,omitempty"`
+	Result     *PropertyAS2 `json:"result,omitempty"`
+	Origin     *PropertyAS2 `json:"origin,omitempty"`
+	Instrument *PropertyAS2 `json:"instrument,omitempty"`
 }

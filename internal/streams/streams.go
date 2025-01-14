@@ -1,61 +1,68 @@
 package streams
 
-import "errors"
+import (
+	"encoding/json"
+	"errors"
+	"fmt"
+	"reflect"
+	"strings"
+)
 
 /*
 All ActivityStreams Properties can be one of a URL, an object, or an array of the former two.
 So it is necessary to wrap each property in a tagged union-like structure for flexibility.
 */
 type PropertyAS2 struct {
-	simple   string
-	complex  interface{}
-	compound []interface{}
+	Simple   string        `json:",omitempty"`
+	Complex  interface{}   `json:",omitempty"`
+	Compound []interface{} `json:",omitempty"`
 }
 
-func (p PropertyAS2) Simple() string {
-	return p.simple
+func (p PropertyAS2) MarshalJSON() ([]byte, error) {
+	if p.IsSimple() {
+		return json.Marshal(p.Simple)
+	} else if p.IsComplex() {
+		return json.Marshal(p.Complex)
+	} else {
+		return json.Marshal(p.Compound)
+	}
 }
-func (p PropertyAS2) Complex() interface{} {
-	return p.complex
-}
-func (p PropertyAS2) Compound() interface{} {
-	return p.compound
-}
+
 func (p PropertyAS2) IsNull() bool {
 	return !(p.IsSimple() && p.IsComplex() && p.IsCompound())
 }
 func (p PropertyAS2) Clear() {
-	p.simple = ""
-	p.complex = nil
-	p.compound = nil
+	p.Simple = ""
+	p.Complex = nil
+	p.Compound = nil
 }
 func (p PropertyAS2) IsSimple() bool {
-	return p.simple != ""
+	return p.Simple != ""
 }
 func (p PropertyAS2) IsComplex() bool {
-	return !p.IsSimple() && p.complex != nil
+	return !p.IsSimple() && p.Complex != nil
 }
 func (p PropertyAS2) IsCompound() bool {
-	return !p.IsSimple() && !p.IsComplex() && p.compound != nil
+	return !p.IsSimple() && !p.IsComplex() && p.Compound != nil
 }
 func (p PropertyAS2) GetType() string {
 	if p.IsSimple() {
-		return "simple"
+		return "Simple"
 	} else if p.IsComplex() {
-		return "complex"
+		return "Complex"
 	} else if p.IsCompound() {
-		return "compound"
+		return "Compound"
 	} else {
 		return "null"
 	}
 }
 func (p PropertyAS2) GetValue() interface{} {
 	if p.IsSimple() {
-		return p.simple
+		return p.Simple
 	} else if p.IsComplex() {
-		return p.complex
+		return p.Complex
 	} else {
-		return p.compound
+		return p.Compound
 	}
 }
 

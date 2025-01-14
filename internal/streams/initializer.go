@@ -2,6 +2,7 @@ package streams
 
 func InitRegistry() *TypeRegistry {
 	var registry TypeRegistry
+	registry.registry = make(map[string]Registrable)
 	// Core Types
 	registry.Register("Object", ObjectAS2{})
 	registry.Register("Link", LinkAS2{})
