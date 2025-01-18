@@ -82,44 +82,83 @@ func (t *TypeRegistry) NewInstance(typing string) (interface{}, error) {
 	return nil, errors.New("expected type not registered")
 }
 
+// Creates a JSON byte string from a struct
+func (t *TypeRegistry) MarshalFromAS2Type(as2 interface{}) ([]byte, error) {
+	var newMap = make(map[string]interface{})
+	temp, err := json.Marshal(as2)
+	if err != nil {
+		return nil, err
+	}
+	err = json.Unmarshal(temp, &newMap) // Populates the map with all fields
+	if err != nil {
+		return nil, err
+	}
+	value := reflect.ValueOf(as2)
+	omap := value.FieldByName("Map_") // Unflatten the Map_ property to add to the map
+	// Append all extra properties to map
+	for k, v := range omap.Interface().(map[string]*PropertyAS2) {
+		newMap[k] = v
+	}
+	// return json object corresponding to map
+	return json.Marshal(newMap)
+}
+
+// Takes a JSON input in bytes, extracts the registered type, and unmarshals the json data into the corresponding struct
 func (t *TypeRegistry) UnmarshalIntoAS2Type(jsonValue []byte) (interface{}, error) {
+	// Unmarshal values into a map
 	var imap map[string]interface{}
 	err := json.Unmarshal(jsonValue, &imap)
 	if err != nil {
 		return nil, err
 	}
+	// Extract type parameter from map and create a reflection type and value for that type
 	instance, err := t.NewInstance(imap["type"].(string))
 	typing := reflect.TypeOf(instance)
 	v := reflect.New(typing).Elem()
 	if err != nil {
 		return nil, err
 	}
-	err = json.Unmarshal(jsonValue, &imap)
-	if err != nil {
-		return nil, err
-	}
+	// Process each field
 	for _, field := range reflect.VisibleFields(typing) {
 		t := field.Type
-		tag := strings.Split(field.Tag.Get("json"), ",")[0]
-		if tag != "-" && tag != "" && v.FieldByName(field.Name).CanSet() {
+		tag := strings.Split(field.Tag.Get("json"), ",")[0]                // We grab this to map JSON field names to struct field names
+		if tag != "-" && tag != "" && v.FieldByName(field.Name).CanSet() { // Grab only named properties that can be set
+			// Skip fields with no set values
 			if _, ok := imap[tag]; !ok {
 				continue
 			}
-			property := PropertyAS2{}
-			propType := reflect.TypeOf(imap[tag]).Kind()
-			if propType == reflect.String {
-				property.Simple = imap[tag].(string)
-			} else if propType == reflect.Array {
-				property.Compound = imap[tag].([]interface{})
-			} else {
-				property.Complex = imap[tag]
-			}
+			// Create a new property
+			property := toProperty(imap[tag])
+			// Depending on whether the field is nullable or not, store the property itself or a pointer to it
 			if t.Kind() == reflect.Ptr {
 				v.FieldByName(field.Name).Set(reflect.ValueOf(&property))
+				delete(imap, tag)
 			} else {
 				v.FieldByName(field.Name).Set(reflect.ValueOf(property))
+				delete(imap, tag)
 			}
 		}
 	}
+	// Make a new Map_ property for all remaining fields
+	nmap := make(map[string]*PropertyAS2, len(imap))
+	for key, val := range imap {
+		newValue := toProperty(val)
+		nmap[key] = &newValue
+	}
+	v.FieldByName("Map_").Set(reflect.ValueOf(nmap))
 	return v.Interface(), nil
+}
+
+// Takes an ordinary input and wraps it in a Property
+func toProperty(m interface{}) PropertyAS2 {
+	kind := reflect.TypeOf(m).Kind()
+	if kind == reflect.String {
+		return PropertyAS2{Simple: m.(string)}
+	} else if kind == reflect.Ptr {
+		return *m.(*PropertyAS2)
+	} else if kind == reflect.Array {
+		return PropertyAS2{Compound: m.([]interface{})}
+	} else {
+		return PropertyAS2{Complex: m.(interface{})}
+	}
 }

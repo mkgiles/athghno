@@ -2,7 +2,6 @@ package main
 
 import (
 	"athghno/internal/streams"
-	"encoding/json"
 	"fmt"
 	"time"
 )
@@ -34,7 +33,9 @@ func main() {
 	note.To.Simple = "https://w3.org/ns/activitystreams#Public"
 	create.Object = streams.PropertyAS2{}
 	create.Object.Complex = note
-	jsonData, err := json.Marshal(create)
+	create.Map_ = map[string]*streams.PropertyAS2{}
+	create.Map_["test"] = &streams.PropertyAS2{Simple: "test"}
+	jsonData, err := registry.MarshalFromAS2Type(create)
 	if err != nil {
 		panic(err)
 	}
@@ -43,7 +44,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	jsonData, err = json.Marshal(result)
+	jsonData, err = registry.MarshalFromAS2Type(result)
 	if err != nil {
 		panic(err)
 	}
