@@ -1,13 +1,51 @@
 package main
 
 import (
+	"athghno/internal/dataStore"
 	"athghno/internal/streams"
+	"crypto/rand"
+	"crypto/rsa"
 	"fmt"
 	"time"
 )
 
 func main() {
 	registry := streams.InitRegistry()
+	db := dataStore.ConnectDB()
+	defer db.Close()
+	if _, err := dataStore.GetServerPublicKey(db); err != nil {
+		fmt.Println("No server public key found. Generating new one")
+		privKey, err := rsa.GenerateKey(rand.Reader, 2048)
+		if err != nil {
+			panic(err)
+		}
+		dataStore.SetServerPrivateKey(db, privKey)
+	}
+	storedObj, err := dataStore.GetObject(db, []byte("https://example.com/create/1"))
+	if err != nil {
+		if err.Error() != "Key not found" {
+			panic(err)
+		} else {
+			jsonData, err := createObject(registry)
+			if err != nil {
+				panic(err)
+			}
+			storedObj = jsonData
+			err = dataStore.PutObject(db, []byte("https://example.com/create/1"), storedObj)
+			if err != nil {
+				panic(err)
+			}
+		}
+	}
+	fmt.Println(string(storedObj))
+	as2, err := registry.UnmarshalIntoAS2Type(storedObj)
+	if err != nil {
+		return
+	}
+	fmt.Println(as2)
+}
+
+func createObject(registry *streams.TypeRegistry) ([]byte, error) {
 	var create streams.CreateAS2
 	var note streams.NoteAS2
 	LDContext := streams.PropertyAS2{
@@ -36,17 +74,5 @@ func main() {
 	create.Map_ = map[string]*streams.PropertyAS2{}
 	create.Map_["test"] = &streams.PropertyAS2{Simple: "test"}
 	jsonData, err := registry.MarshalFromAS2Type(create)
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println(string(jsonData))
-	result, err := registry.UnmarshalIntoAS2Type(jsonData)
-	if err != nil {
-		panic(err)
-	}
-	jsonData, err = registry.MarshalFromAS2Type(result)
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println(string(jsonData))
+	return jsonData, err
 }
