@@ -1,7 +1,9 @@
 package streams
 
-func InitRegistry() *TypeRegistry {
-	var registry TypeRegistry
+func InitRegistry(hostname string) *TypeRegistry {
+	registry := TypeRegistry{
+		Hostname: hostname,
+	}
 	registry.registry = make(map[string]Registrable)
 	// Core Types
 	registry.Register("Object", ObjectAS2{})

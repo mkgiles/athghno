@@ -40,41 +40,30 @@ func PutObject(db *badger.DB, key []byte, value []byte) error {
 	return txn.Commit()
 }
 
-func GetServerPublicKey(db *badger.DB) ([]byte, error) {
-	txn := db.NewTransaction(false)
-	defer txn.Discard()
-	item, err := txn.Get([]byte("/PublicKey"))
-	if err != nil {
-		return nil, err
-	}
-	return item.ValueCopy(nil)
-}
-
-func GetServerPrivateKey(db *badger.DB) ([]byte, error) {
+func GetServerPrivateKey(db *badger.DB) (*rsa.PrivateKey, error) {
 	txn := db.NewTransaction(false)
 	defer txn.Discard()
 	item, err := txn.Get([]byte("/PrivateKey"))
 	if err != nil {
 		return nil, err
 	}
-	return item.ValueCopy(nil)
+	privKey, err := item.ValueCopy(nil)
+	if err != nil {
+		return nil, err
+	}
+	block, _ := pem.Decode(privKey)
+	return x509.ParsePKCS1PrivateKey(block.Bytes)
 }
 
 func SetServerPrivateKey(db *badger.DB, privateKey *rsa.PrivateKey) {
-	pubKeyEntry := badger.NewEntry([]byte("/PublicKey"), pem.EncodeToMemory(&pem.Block{
-		Type:  "RSA PUBLIC KEY",
-		Bytes: x509.MarshalPKCS1PublicKey(&privateKey.PublicKey),
+	privKeypcks1 := x509.MarshalPKCS1PrivateKey(privateKey)
+	privKeyPem := string(pem.EncodeToMemory(&pem.Block{
+		Type:  "PRIVATE KEY",
+		Bytes: privKeypcks1,
 	}))
-	privKeyEntry := badger.NewEntry([]byte("/PrivateKey"), pem.EncodeToMemory(&pem.Block{
-		Type:  "RSA PRIVATE KEY",
-		Bytes: x509.MarshalPKCS1PrivateKey(privateKey),
-	}))
+	privKeyEntry := badger.NewEntry([]byte("/PrivateKey"), []byte(privKeyPem))
 	err := db.Update(func(txn *badger.Txn) error {
 		err := txn.SetEntry(privKeyEntry)
-		if err != nil {
-			return err
-		}
-		err = txn.SetEntry(pubKeyEntry)
 		if err != nil {
 			return err
 		}

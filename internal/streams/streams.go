@@ -67,6 +67,7 @@ func (p PropertyAS2) GetValue() interface{} {
 
 type TypeRegistry struct {
 	registry map[string]Registrable
+	Hostname string
 }
 
 type Registrable interface{}

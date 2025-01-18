@@ -14,6 +14,7 @@ type ActorAS2 struct {
 	Streams              *PropertyAS2 `json:"streams,omitempty"`
 	PreferredUsername    *PropertyAS2 `json:"preferredUsername,omitempty"`
 	PreferredUsernameMap *PropertyAS2 `json:"preferredUsernameMap,omitempty"`
+	PublicKey            *PropertyAS2 `json:"publicKey,omitempty"`
 	Endpoints            *PropertyAS2 `json:"endpoints,omitempty"`
 }
 
