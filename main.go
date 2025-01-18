@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	streams.InitRegistry()
+	registry := streams.InitRegistry()
 	var create streams.CreateAS2
 	var note streams.NoteAS2
 	LDContext := streams.PropertyAS2{
@@ -35,6 +35,15 @@ func main() {
 	create.Object = streams.PropertyAS2{}
 	create.Object.Complex = note
 	jsonData, err := json.Marshal(create)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(string(jsonData))
+	result, err := registry.UnmarshalIntoAS2Type(jsonData)
+	if err != nil {
+		panic(err)
+	}
+	jsonData, err = json.Marshal(result)
 	if err != nil {
 		panic(err)
 	}

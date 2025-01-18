@@ -3,7 +3,6 @@ package streams
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"reflect"
 	"strings"
 )
@@ -81,4 +80,46 @@ func (t *TypeRegistry) NewInstance(typing string) (interface{}, error) {
 		return registrable, nil
 	}
 	return nil, errors.New("expected type not registered")
+}
+
+func (t *TypeRegistry) UnmarshalIntoAS2Type(jsonValue []byte) (interface{}, error) {
+	var imap map[string]interface{}
+	err := json.Unmarshal(jsonValue, &imap)
+	if err != nil {
+		return nil, err
+	}
+	instance, err := t.NewInstance(imap["type"].(string))
+	typing := reflect.TypeOf(instance)
+	v := reflect.New(typing).Elem()
+	if err != nil {
+		return nil, err
+	}
+	err = json.Unmarshal(jsonValue, &imap)
+	if err != nil {
+		return nil, err
+	}
+	for _, field := range reflect.VisibleFields(typing) {
+		t := field.Type
+		tag := strings.Split(field.Tag.Get("json"), ",")[0]
+		if tag != "-" && tag != "" && v.FieldByName(field.Name).CanSet() {
+			if _, ok := imap[tag]; !ok {
+				continue
+			}
+			property := PropertyAS2{}
+			propType := reflect.TypeOf(imap[tag]).Kind()
+			if propType == reflect.String {
+				property.Simple = imap[tag].(string)
+			} else if propType == reflect.Array {
+				property.Compound = imap[tag].([]interface{})
+			} else {
+				property.Complex = imap[tag]
+			}
+			if t.Kind() == reflect.Ptr {
+				v.FieldByName(field.Name).Set(reflect.ValueOf(&property))
+			} else {
+				v.FieldByName(field.Name).Set(reflect.ValueOf(property))
+			}
+		}
+	}
+	return v.Interface(), nil
 }
