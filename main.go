@@ -83,7 +83,7 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case "/":
 		Index(w, r)
 	case "/.well-known/webfinger":
-		serverProto.WebFinger(w, r)
+		serverProto.WebFinger(h.Db, w, r)
 	default:
 		fullUrl := r.URL.Scheme + "://" + r.Host + r.URL.Path
 		fmt.Println(fullUrl)
@@ -151,6 +151,10 @@ func createServerActor(db *badger.DB, registry *streams.TypeRegistry) (streams.A
 		return app, err
 	}
 	err = dataStore.PutObject(db, []byte(app.Id.Simple), jsonData)
+	if err != nil {
+		return app, err
+	}
+	err = serverProto.CreateWF(db, "acct:"+registry.Hostname+"@"+registry.Hostname, app)
 	dataStore.SetServerPrivateKey(db, privateKey)
 	return app, err
 }
