@@ -1,6 +1,7 @@
 package serverProto
 
 import (
+	"athghno/internal/dataStore"
 	"athghno/internal/streams"
 	"crypto"
 	"crypto/rsa"
@@ -8,10 +9,30 @@ import (
 	"encoding/pem"
 	"errors"
 	"github.com/dgraph-io/badger/v4"
+	"net/http"
 	"strings"
 )
 
-func ValidateSignature(registry *streams.TypeRegistry, db *badger.DB, signature string) (interface{}, error) {
+func GetObject(registry *streams.TypeRegistry, db *badger.DB, request http.Request) ([]byte, error) {
+	signature := request.Header.Get("Signature")
+	if signature == "" {
+		return nil, errors.New("Missing signature")
+	}
+	valid, err := ValidateSignature(registry, db, signature)
+	if !valid {
+		return nil, errors.New("Invalid signature")
+	}
+	if err != nil {
+		return nil, err
+	}
+	object, err := dataStore.GetObject(db, []byte(request.URL.String()))
+	if err != nil {
+		return nil, err
+	}
+	return object, nil
+}
+
+func ValidateSignature(registry *streams.TypeRegistry, db *badger.DB, signature string) (bool, error) {
 	parts := strings.Split(signature, ",")
 	partMap := map[string]string{}
 	for _, part := range parts {
@@ -23,7 +44,7 @@ func ValidateSignature(registry *streams.TypeRegistry, db *badger.DB, signature 
 	}
 	res, err := FetchActor(registry, partMap["keyId"], db)
 	if err != nil {
-		return nil, err
+		return false, err
 	}
 	var pubKey streams.PublicKey
 	switch res.(type) {
@@ -46,19 +67,19 @@ func ValidateSignature(registry *streams.TypeRegistry, db *badger.DB, signature 
 		actor := res.(streams.ActorAS2)
 		pubKey = actor.PublicKey.Complex.(streams.PublicKey)
 	default:
-		return nil, errors.New("unknown type")
+		return false, errors.New("unknown type")
 	}
 	block, _ := pem.Decode([]byte(pubKey.PublicKeyPem))
 	if block == nil {
-		return nil, errors.New("failed to decode public key")
+		return false, errors.New("failed to decode public key")
 	}
 	key, err := x509.ParsePKCS1PublicKey(block.Bytes)
 	if err != nil {
-		return nil, err
+		return false, err
 	}
 	err = rsa.VerifyPKCS1v15(key, crypto.SHA256, []byte(signature), []byte(partMap["signature"]))
 	if err != nil {
-		return nil, err
+		return false, err
 	}
-	return res, nil
+	return true, nil
 }
