@@ -1,6 +1,6 @@
 module athghno
 
-go 1.23.0
+go 1.25.0
 
 require (
 	github.com/dgraph-io/badger/v4 v4.5.0
@@ -16,7 +16,7 @@ require (
 	github.com/klauspost/compress v1.17.11 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	go.opencensus.io v0.24.0 // indirect
-	golang.org/x/net v0.38.0 // indirect
-	golang.org/x/sys v0.31.0 // indirect
+	golang.org/x/net v0.55.0 // indirect
+	golang.org/x/sys v0.45.0 // indirect
 	google.golang.org/protobuf v1.33.0 // indirect
 )
